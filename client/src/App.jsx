@@ -5,6 +5,9 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Clients from './pages/Clients'
+import Invoices from './pages/Invoices'
+import CreateInvoice from './pages/CreateInvoice'
 
 // API base URL configuration
 const API_URL = 'http://localhost:5000/api'
@@ -47,6 +50,30 @@ function Layout({ children }) {
             >
               Dashboard
             </NavLink>
+            {user && (
+              <>
+                <NavLink
+                  to="/clients"
+                  className={({ isActive }) =>
+                    `text-sm font-medium transition-colors duration-200 ${
+                      isActive ? 'text-[#10B981]' : 'text-gray-400 hover:text-white'
+                    }`
+                  }
+                >
+                  Clients
+                </NavLink>
+                <NavLink
+                  to="/invoices"
+                  className={({ isActive }) =>
+                    `text-sm font-medium transition-colors duration-200 ${
+                      isActive ? 'text-[#10B981]' : 'text-gray-400 hover:text-white'
+                    }`
+                  }
+                >
+                  Invoices
+                </NavLink>
+              </>
+            )}
             <NavLink
               to="/about"
               className={({ isActive }) =>
@@ -228,6 +255,9 @@ export default function App() {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/clients" element={<Clients />} />
+              <Route path="/invoices" element={<Invoices />} />
+              <Route path="/invoices/create" element={<CreateInvoice />} />
             </Route>
 
             {/* Public Routes */}

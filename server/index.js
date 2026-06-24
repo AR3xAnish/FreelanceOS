@@ -13,7 +13,11 @@ app.use(express.json());
 
 // Routes
 const authRoutes = require('./routes/auth');
+const clientRoutes = require('./routes/clients');
+const invoiceRoutes = require('./routes/invoices');
 app.use('/api/auth', authRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
