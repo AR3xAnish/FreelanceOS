@@ -11,6 +11,10 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/freela
 app.use(cors());
 app.use(express.json());
 
+// Routes
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
 // Basic health check route
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok' });

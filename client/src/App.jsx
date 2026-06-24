@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Link, NavLink } from 'react-router-dom'
 import axios from 'axios'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
+import Login from './pages/Login'
+import Register from './pages/Register'
 
 // API base URL configuration
 const API_URL = 'http://localhost:5000/api'
 
 function Layout({ children }) {
   const [apiOnline, setApiOnline] = useState(null)
+  const { user, logout } = useAuth()
 
   useEffect(() => {
     axios.get(`${API_URL}/health`)
@@ -31,7 +36,7 @@ function Layout({ children }) {
             </span>
           </Link>
           
-          <nav className="flex items-center gap-8">
+          <nav className="flex items-center gap-6 sm:gap-8">
             <NavLink
               to="/"
               className={({ isActive }) =>
@@ -52,15 +57,45 @@ function Layout({ children }) {
             >
               About
             </NavLink>
-            <button className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0A] text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 cursor-pointer">
-              Get Started
-            </button>
+
+            {user ? (
+              <div className="flex items-center gap-4 border-l border-[#ffffff08] pl-4 sm:pl-6">
+                <span className="text-xs sm:text-sm text-gray-400 font-medium hidden sm:inline">
+                  Hello, <span className="text-white font-semibold">{user.name}</span>
+                </span>
+                <button
+                  onClick={logout}
+                  className="border border-gray-800 hover:border-gray-600 text-gray-300 text-xs font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 cursor-pointer"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 sm:gap-6 border-l border-[#ffffff08] pl-4 sm:pl-6">
+                <NavLink
+                  to="/login"
+                  className={({ isActive }) =>
+                    `text-sm font-medium transition-colors duration-200 ${
+                      isActive ? 'text-[#10B981]' : 'text-gray-400 hover:text-white'
+                    }`
+                  }
+                >
+                  Sign In
+                </NavLink>
+                <Link
+                  to="/register"
+                  className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0A] text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 cursor-pointer"
+                >
+                  Get Started
+                </Link>
+              </div>
+            )}
           </nav>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow max-w-6xl w-full mx-auto px-6 py-16">
+      <main className="grow max-w-6xl w-full mx-auto px-6 py-16">
         {children}
       </main>
 
@@ -88,6 +123,8 @@ function Layout({ children }) {
 }
 
 function Dashboard() {
+  const { user } = useAuth()
+
   return (
     <div className="space-y-20 max-w-5xl mx-auto">
       {/* Hero Section */}
@@ -96,21 +133,11 @@ function Dashboard() {
           Run Your Freelance Business Like a Pro
         </h1>
         <p className="text-gray-500 text-lg md:text-xl font-normal leading-relaxed">
-          The all-in-one platform for freelancers to manage clients, invoices, and analytics.
+          Welcome back, <span className="text-white font-medium">{user.name}</span>. Managing workspace: <span className="text-white font-medium">{user.businessName || 'My Business'}</span> ({user.currency}).
         </p>
         
-        {/* Hero CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-          <button className="w-full sm:w-auto bg-[#10B981] hover:bg-[#059669] text-[#0A0A0A] font-semibold px-6 py-3 rounded-md transition-colors duration-200 cursor-pointer">
-            Get Started Free
-          </button>
-          <button className="w-full sm:w-auto bg-transparent border border-gray-800 hover:border-gray-600 text-gray-300 font-semibold px-6 py-3 rounded-md transition-colors duration-200 cursor-pointer">
-            View Demo
-          </button>
-        </div>
-
         {/* Stats Pills */}
-        <div className="pt-8 flex justify-center items-center gap-2.5 text-xs text-gray-500 md:text-sm">
+        <div className="pt-4 flex justify-center items-center gap-2.5 text-xs text-gray-500 md:text-sm">
           <span>500+ Freelancers</span>
           <span className="text-gray-700 font-bold">·</span>
           <span>10k+ Invoices Sent</span>
@@ -195,12 +222,21 @@ function About() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/about" element={<About />} />
-        </Routes>
-      </Layout>
+      <AuthProvider>
+        <Layout>
+          <Routes>
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<Dashboard />} />
+            </Route>
+
+            {/* Public Routes */}
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Routes>
+        </Layout>
+      </AuthProvider>
     </BrowserRouter>
   )
 }
