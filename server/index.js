@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const { initCronJobs } = require('./utils/cronJobs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,6 +29,7 @@ app.get('/api/health', (req, res) => {
 mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
   .then(() => {
     console.log('Connected to MongoDB database successfully');
+    initCronJobs();
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

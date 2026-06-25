@@ -12,6 +12,8 @@ export default function InvoiceDetail() {
   const [error, setError] = useState('')
   const [downloading, setDownloading] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [emailStatus, setEmailStatus] = useState({ type: '', message: '' })
 
   // Fetch invoice details
   const fetchInvoice = async () => {
@@ -76,6 +78,25 @@ export default function InvoiceDetail() {
     }
   }
 
+  // Handle Send Email
+  const handleSendEmail = async () => {
+    if (!invoice) return
+    setSendingEmail(true)
+    setEmailStatus({ type: '', message: '' })
+    try {
+      const res = await axios.post(`${API_URL}/${id}/send-email`)
+      setEmailStatus({ type: 'success', message: res.data.message })
+    } catch (err) {
+      console.error('Error sending email:', err)
+      setEmailStatus({ 
+        type: 'error', 
+        message: err.response?.data?.error || 'Failed to send invoice email. Please try again.' 
+      })
+    } finally {
+      setSendingEmail(false)
+    }
+  }
+
   // Handle Delete
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this invoice?')) return
@@ -130,6 +151,22 @@ export default function InvoiceDetail() {
         </Link>
         <div className="flex flex-wrap gap-3">
           <button
+            onClick={handleSendEmail}
+            disabled={sendingEmail}
+            className="border border-[#10B981]/30 hover:bg-[#10B981]/10 text-[#10B981] font-semibold text-xs px-4 py-2.5 rounded-md transition-colors duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {sendingEmail ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin"></span>
+                Sending...
+              </>
+            ) : (
+              <>
+                <span>📧</span> Send Email
+              </>
+            )}
+          </button>
+          <button
             onClick={handleDownloadPDF}
             disabled={downloading}
             className="bg-[#10B981] hover:bg-[#059669] text-[#0A0A0A] font-semibold text-xs px-4 py-2.5 rounded-md transition-colors duration-200 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
@@ -162,6 +199,17 @@ export default function InvoiceDetail() {
           </button>
         </div>
       </div>
+
+      {/* Email Status Alert Callout */}
+      {emailStatus.message && (
+        <div className={`p-4 rounded-md text-sm font-medium border ${
+          emailStatus.type === 'success' 
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+            : 'bg-red-500/10 border-red-500/20 text-red-400'
+        }`}>
+          {emailStatus.message}
+        </div>
+      )}
 
       {/* Invoice Document Box */}
       <div className="bg-[#111111] border border-[#ffffff08] border-t-2 border-t-[#10B981] rounded-lg p-8 sm:p-10 shadow-2xl space-y-10">
