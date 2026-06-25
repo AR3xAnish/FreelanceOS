@@ -8,6 +8,7 @@ import Register from './pages/Register'
 import Clients from './pages/Clients'
 import Invoices from './pages/Invoices'
 import CreateInvoice from './pages/CreateInvoice'
+import InvoiceDetail from './pages/InvoiceDetail'
 
 // API base URL configuration
 const API_URL = 'http://localhost:5000/api'
@@ -258,6 +259,7 @@ export default function App() {
               <Route path="/clients" element={<Clients />} />
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/invoices/create" element={<CreateInvoice />} />
+              <Route path="/invoices/:id" element={<InvoiceDetail />} />
             </Route>
 
             {/* Public Routes */}

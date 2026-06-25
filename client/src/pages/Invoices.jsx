@@ -138,7 +138,11 @@ export default function Invoices() {
               <tbody className="divide-y divide-[#ffffff08] text-sm text-gray-300 font-normal">
                 {invoices.map((inv) => (
                   <tr key={inv._id} className="hover:bg-white/[0.01] transition-colors duration-150">
-                    <td className="px-6 py-4 font-semibold text-white tracking-wider">{inv.invoiceNumber}</td>
+                    <td className="px-6 py-4 font-semibold text-white tracking-wider">
+                      <Link to={`/invoices/${inv._id}`} className="text-[#10B981] hover:underline">
+                        {inv.invoiceNumber}
+                      </Link>
+                    </td>
                     <td className="px-6 py-4">
                       {inv.clientId ? (
                         <div>
