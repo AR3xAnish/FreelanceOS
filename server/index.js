@@ -17,10 +17,13 @@ const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/clients');
 const invoiceRoutes = require('./routes/invoices');
 const expenseRoutes = require('./routes/expenses');
+const dashboardRoutes = require('./routes/dashboard');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {

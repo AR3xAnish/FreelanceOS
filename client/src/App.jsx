@@ -11,6 +11,7 @@ import CreateInvoice from './pages/CreateInvoice'
 import InvoiceDetail from './pages/InvoiceDetail'
 import Expenses from './pages/Expenses'
 import Settings from './pages/Settings'
+import Dashboard from './pages/Dashboard'
 
 // API base URL configuration
 const API_URL = 'http://localhost:5000/api'
@@ -168,75 +169,6 @@ function Layout({ children }) {
           </div>
         </div>
       </footer>
-    </div>
-  )
-}
-
-function Dashboard() {
-  const { user } = useAuth()
-
-  return (
-    <div className="space-y-20 max-w-5xl mx-auto">
-      {/* Hero Section */}
-      <div className="text-center space-y-6 max-w-3xl mx-auto">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white leading-tight">
-          Run Your Freelance Business Like a Pro
-        </h1>
-        <p className="text-gray-500 text-lg md:text-xl font-normal leading-relaxed">
-          Welcome back, <span className="text-white font-medium">{user.name}</span>. Managing workspace: <span className="text-white font-medium">{user.businessName || 'My Business'}</span> ({user.currency}).
-        </p>
-        
-        {/* Stats Pills */}
-        <div className="pt-4 flex justify-center items-center gap-2.5 text-xs text-gray-500 md:text-sm">
-          <span>500+ Freelancers</span>
-          <span className="text-gray-700 font-bold">·</span>
-          <span>10k+ Invoices Sent</span>
-          <span className="text-gray-700 font-bold">·</span>
-          <span>4.9★ Rating</span>
-        </div>
-      </div>
-
-      {/* Cards Section */}
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Card 1: Clients & Invoices */}
-        <div className="bg-[#111111] border border-[#ffffff08] border-t-2 border-t-[#10B981] rounded-lg p-6 flex flex-col justify-between space-y-4 hover:border-gray-800 transition-colors duration-200">
-          <div className="space-y-3">
-            <div className="w-10 h-10 rounded-md bg-[#10B981]/10 flex items-center justify-center text-lg text-[#10B981]">
-              📄
-            </div>
-            <h3 className="font-semibold text-lg text-white">Clients & Invoices</h3>
-            <p className="text-sm font-normal text-gray-500 leading-relaxed">
-              Create and send professional invoices in 30 seconds.
-            </p>
-          </div>
-        </div>
-
-        {/* Card 2: Payment Tracking */}
-        <div className="bg-[#111111] border border-[#ffffff08] border-t-2 border-t-[#10B981] rounded-lg p-6 flex flex-col justify-between space-y-4 hover:border-gray-800 transition-colors duration-200">
-          <div className="space-y-3">
-            <div className="w-10 h-10 rounded-md bg-[#10B981]/10 flex items-center justify-center text-lg text-[#10B981]">
-              💳
-            </div>
-            <h3 className="font-semibold text-lg text-white">Payment Tracking</h3>
-            <p className="text-sm font-normal text-gray-500 leading-relaxed">
-              Know exactly who owes you and when.
-            </p>
-          </div>
-        </div>
-
-        {/* Card 3: Analytics */}
-        <div className="bg-[#111111] border border-[#ffffff08] border-t-2 border-t-[#10B981] rounded-lg p-6 flex flex-col justify-between space-y-4 hover:border-gray-800 transition-colors duration-200">
-          <div className="space-y-3">
-            <div className="w-10 h-10 rounded-md bg-[#10B981]/10 flex items-center justify-center text-lg text-[#10B981]">
-              📈
-            </div>
-            <h3 className="font-semibold text-lg text-white">Analytics</h3>
-            <p className="text-sm font-normal text-gray-500 leading-relaxed">
-              See your revenue, expenses and net profit at a glance.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
