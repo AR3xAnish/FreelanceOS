@@ -108,4 +108,37 @@ router.get('/me', authMiddleware, async (req, res) => {
   res.status(200).json({ user: req.user });
 });
 
+// @route   PUT /api/auth/settings
+// @desc    Update freelancer settings/profile
+// @access  Private
+router.put('/settings', authMiddleware, async (req, res) => {
+  try {
+    const { name, businessName, address, gstNumber, currency } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (name) user.name = name;
+    if (businessName !== undefined) user.businessName = businessName;
+    if (address !== undefined) user.address = address;
+    if (gstNumber !== undefined) user.gstNumber = gstNumber;
+    if (currency) user.currency = currency;
+
+    await user.save();
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      message: 'Settings updated successfully.',
+      user: userResponse,
+    });
+  } catch (error) {
+    console.error('Update Settings Error:', error.message);
+    res.status(500).json({ error: 'Server error. Could not update settings.' });
+  }
+});
+
 module.exports = router;

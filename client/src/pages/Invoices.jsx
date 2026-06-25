@@ -4,6 +4,19 @@ import axios from 'axios'
 
 const API_URL = 'http://localhost:5000/api/invoices'
 
+const getCurrencySymbol = (currencyCode) => {
+  const symbols = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    INR: '₹',
+    CAD: 'CA$',
+    AUD: 'A$',
+    JPY: '¥'
+  };
+  return symbols[currencyCode] || currencyCode + ' ';
+};
+
 export default function Invoices() {
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -157,7 +170,7 @@ export default function Invoices() {
                     </td>
                     <td className="px-6 py-4 text-gray-400">{formatDate(inv.dueDate)}</td>
                     <td className="px-6 py-4 font-semibold text-white">
-                      {inv.clientId?.currency || 'USD'} {inv.totalAmount.toFixed(2)}
+                      {getCurrencySymbol(inv.clientId?.currency || 'USD')}{inv.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4">
                       {inv.status === 'paid' ? (

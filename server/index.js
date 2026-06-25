@@ -16,9 +16,11 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/clients');
 const invoiceRoutes = require('./routes/invoices');
+const expenseRoutes = require('./routes/expenses');
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {

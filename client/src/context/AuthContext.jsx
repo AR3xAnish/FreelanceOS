@@ -79,12 +79,18 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  // Update user in context
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser)
+  }
+
   const value = {
     user,
     loading,
     login,
     register,
-    logout
+    logout,
+    updateUser
   }
 
   return (

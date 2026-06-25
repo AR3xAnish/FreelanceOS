@@ -9,6 +9,8 @@ import Clients from './pages/Clients'
 import Invoices from './pages/Invoices'
 import CreateInvoice from './pages/CreateInvoice'
 import InvoiceDetail from './pages/InvoiceDetail'
+import Expenses from './pages/Expenses'
+import Settings from './pages/Settings'
 
 // API base URL configuration
 const API_URL = 'http://localhost:5000/api'
@@ -72,6 +74,26 @@ function Layout({ children }) {
                   }
                 >
                   Invoices
+                </NavLink>
+                <NavLink
+                  to="/expenses"
+                  className={({ isActive }) =>
+                    `text-sm font-medium transition-colors duration-200 ${
+                      isActive ? 'text-[#10B981]' : 'text-gray-400 hover:text-white'
+                    }`
+                  }
+                >
+                  Expenses
+                </NavLink>
+                <NavLink
+                  to="/settings"
+                  className={({ isActive }) =>
+                    `text-sm font-medium transition-colors duration-200 ${
+                      isActive ? 'text-[#10B981]' : 'text-gray-400 hover:text-white'
+                    }`
+                  }
+                >
+                  Settings
                 </NavLink>
               </>
             )}
@@ -260,6 +282,8 @@ export default function App() {
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/invoices/create" element={<CreateInvoice />} />
               <Route path="/invoices/:id" element={<InvoiceDetail />} />
+              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
 
             {/* Public Routes */}

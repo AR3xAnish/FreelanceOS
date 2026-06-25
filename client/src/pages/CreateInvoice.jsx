@@ -5,6 +5,19 @@ import axios from 'axios'
 const CLIENTS_API = 'http://localhost:5000/api/clients'
 const INVOICES_API = 'http://localhost:5000/api/invoices'
 
+const getCurrencySymbol = (currencyCode) => {
+  const symbols = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    INR: '₹',
+    CAD: 'CA$',
+    AUD: 'A$',
+    JPY: '¥'
+  };
+  return symbols[currencyCode] || currencyCode + ' ';
+};
+
 export default function CreateInvoice() {
   const [clients, setClients] = useState([])
   const [loadingClients, setLoadingClients] = useState(true)
@@ -20,6 +33,9 @@ export default function CreateInvoice() {
   ])
 
   const navigate = useNavigate()
+
+  const selectedClient = clients.find(c => c._id === clientId)
+  const clientCurrency = selectedClient?.currency || 'USD'
 
   // Load clients to populate select dropdown
   useEffect(() => {
@@ -185,12 +201,26 @@ export default function CreateInvoice() {
 
           {/* Line Items Table */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500">Line Items</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500">Line Items</h3>
+              <span className="text-xs font-semibold text-gray-400 bg-[#0A0A0A] border border-[#ffffff08] px-2.5 py-1 rounded-md">
+                Currency: <span className="text-[#10B981]">{clientCurrency} ({getCurrencySymbol(clientCurrency)})</span>
+              </span>
+            </div>
+
+            {/* Desktop Table Headers */}
+            <div className="hidden md:grid grid-cols-12 gap-3 pb-2 border-b border-[#ffffff08] text-xs font-semibold text-gray-400">
+              <div className="col-span-5">Service Description</div>
+              <div className="col-span-2">Quantity</div>
+              <div className="col-span-2">Rate ({getCurrencySymbol(clientCurrency).trim()})</div>
+              <div className="col-span-2 text-right">Total</div>
+              <div className="col-span-1"></div>
+            </div>
             
             <div className="space-y-3">
               {lineItems.map((item, index) => (
                 <div key={index} className="grid grid-cols-12 gap-3 items-center border-b border-[#ffffff08] pb-3 md:border-b-0 md:pb-0">
-                  <div className="col-span-12 md:col-span-6 space-y-1 md:space-y-0">
+                  <div className="col-span-12 md:col-span-5 space-y-1 md:space-y-0">
                     <label className="text-[10px] font-semibold text-gray-500 block md:hidden">Service Description</label>
                     <input
                       type="text"
@@ -216,7 +246,9 @@ export default function CreateInvoice() {
                   </div>
 
                   <div className="col-span-4 md:col-span-2 space-y-1 md:space-y-0">
-                    <label className="text-[10px] font-semibold text-gray-500 block md:hidden">Rate</label>
+                    <label className="text-[10px] font-semibold text-gray-500 block md:hidden">
+                      Rate ({getCurrencySymbol(clientCurrency).trim()})
+                    </label>
                     <input
                       type="number"
                       min="0"
@@ -229,14 +261,14 @@ export default function CreateInvoice() {
                     />
                   </div>
 
-                  <div className="col-span-3 md:col-span-1.5 text-right font-medium text-white text-sm">
+                  <div className="col-span-3 md:col-span-2 text-right font-medium text-white text-sm">
                     <label className="text-[10px] font-semibold text-gray-500 block md:hidden">Total</label>
                     <div className="py-2 md:py-0">
-                      ${calculateLineAmount(item).toFixed(2)}
+                      {getCurrencySymbol(clientCurrency)}{calculateLineAmount(item).toFixed(2)}
                     </div>
                   </div>
 
-                  <div className="col-span-1 md:col-span-0.5 text-right">
+                  <div className="col-span-1 md:col-span-1 text-right">
                     <button
                       type="button"
                       onClick={() => handleRemoveItem(index)}
@@ -278,7 +310,7 @@ export default function CreateInvoice() {
 
             <div className="w-full md:w-auto text-right space-y-2 self-end">
               <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Grand Total</div>
-              <div className="text-3xl font-bold text-white">${calculateTotal().toFixed(2)}</div>
+              <div className="text-3xl font-bold text-white">{getCurrencySymbol(clientCurrency)}{calculateTotal().toFixed(2)}</div>
             </div>
           </div>
 

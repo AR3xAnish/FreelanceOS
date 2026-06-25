@@ -4,6 +4,19 @@ import axios from 'axios'
 
 const API_URL = 'http://localhost:5000/api/invoices'
 
+const getCurrencySymbol = (currencyCode) => {
+  const symbols = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    INR: '₹',
+    CAD: 'CA$',
+    AUD: 'A$',
+    JPY: '¥'
+  };
+  return symbols[currencyCode] || currencyCode + ' ';
+};
+
 export default function InvoiceDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -299,11 +312,11 @@ export default function InvoiceDetail() {
                 <tr key={item._id || idx} className="hover:bg-white/[0.005] transition-colors duration-150">
                   <td className="px-5 py-4 font-normal text-white">{item.service}</td>
                   <td className="px-5 py-4 text-right font-medium text-gray-400">
-                    {Number(item.rate).toFixed(2)}
+                    {getCurrencySymbol(clientCurrency)}{Number(item.rate).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-5 py-4 text-right font-normal text-gray-400">{item.quantity}</td>
                   <td className="px-5 py-4 text-right font-semibold text-white">
-                    {Number(item.amount).toFixed(2)}
+                    {getCurrencySymbol(clientCurrency)}{Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </td>
                 </tr>
               ))}
@@ -327,11 +340,11 @@ export default function InvoiceDetail() {
             <div className="bg-[#0A0A0A]/40 border border-[#ffffff08] rounded-lg p-5 space-y-4">
               <div className="flex justify-between items-center text-sm font-medium">
                 <span className="text-gray-500">Invoice Subtotal</span>
-                <span className="text-gray-300 font-semibold">{clientCurrency} {Number(invoice.totalAmount).toFixed(2)}</span>
+                <span className="text-gray-300 font-semibold">{getCurrencySymbol(clientCurrency)}{Number(invoice.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="border-t border-[#ffffff08] pt-4 flex justify-between items-center text-base">
                 <span className="text-white font-semibold">Total Amount Due</span>
-                <span className="text-[#10B981] font-bold text-lg">{clientCurrency} {Number(invoice.totalAmount).toFixed(2)}</span>
+                <span className="text-[#10B981] font-bold text-lg">{getCurrencySymbol(clientCurrency)}{Number(invoice.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
