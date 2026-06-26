@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 
-const SETTINGS_API = 'http://localhost:5000/api/auth/settings'
+const SETTINGS_API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/auth/settings'
 
 export default function Settings() {
   const { user, updateUser } = useAuth()

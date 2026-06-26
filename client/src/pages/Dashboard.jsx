@@ -15,7 +15,7 @@ import {
 } from 'recharts'
 import { useAuth } from '../context/AuthContext'
 
-const STATS_API = 'http://localhost:5000/api/dashboard/stats'
+const STATS_API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/dashboard/stats'
 
 const getCurrencySymbol = (currencyCode) => {
   const symbols = {

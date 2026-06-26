@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import axios from 'axios'
 
-const API_BASE = 'http://localhost:5000/api/portal'
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/portal'
 
 const getCurrencySymbol = (currencyCode) => {
   const symbols = {

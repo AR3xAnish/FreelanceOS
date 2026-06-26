@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 
-const CLIENTS_API = 'http://localhost:5000/api/clients'
-const INVOICES_API = 'http://localhost:5000/api/invoices'
+const CLIENTS_API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/clients'
+const INVOICES_API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/invoices'
 
 const getCurrencySymbol = (currencyCode) => {
   const symbols = {
