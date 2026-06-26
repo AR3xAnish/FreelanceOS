@@ -104,9 +104,30 @@ async function sendPortalEmail(client, freelancer, portalLink) {
   return transporter.sendMail(mailOptions);
 }
 
+/**
+ * Sends a rejection email to the freelancer when the portal client rejects an invoice.
+ */
+async function sendRejectionEmail(invoice, client, freelancer, reason) {
+  if (!transporter) {
+    console.log(`[MOCK EMAIL] sendRejectionEmail: To: ${freelancer.email}, Invoice: ${invoice.invoiceNumber}, Reason: ${reason}`);
+    return { mockSent: true };
+  }
+
+  const clientName = client.name || 'Portal Client';
+  const mailOptions = {
+    from: `"${clientName}" <${process.env.EMAIL_USER}>`,
+    to: freelancer.email,
+    subject: `Invoice ${invoice.invoiceNumber} was rejected`,
+    text: `Invoice #${invoice.invoiceNumber} was rejected by Portal Client\nReason: ${reason}`
+  };
+
+  return transporter.sendMail(mailOptions);
+}
+
 module.exports = {
   sendInvoiceEmail,
   sendReminderEmail,
   sendOverdueEmail,
-  sendPortalEmail
+  sendPortalEmail,
+  sendRejectionEmail
 };

@@ -224,6 +224,26 @@ export default function InvoiceDetail() {
         </div>
       )}
 
+      {/* Rejection Alert Callout */}
+      {invoice.approvalStatus === 'rejected' && (
+        <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 font-medium space-y-3">
+          <div className="flex items-center gap-2 font-bold text-white text-base">
+            <span>⚠️</span> Invoice Rejected by Portal Client
+          </div>
+          <p className="text-gray-300">
+            <strong>Reason for rejection:</strong> "{invoice.rejectionReason || 'No reason provided.'}"
+          </p>
+          <div className="pt-1">
+            <Link
+              to={`/invoices/${invoice._id}/edit`}
+              className="inline-flex items-center justify-center bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 font-semibold px-4 py-2.5 rounded-md transition-colors duration-200 text-xs cursor-pointer gap-1"
+            >
+              <span>✏️</span> Edit & Resubmit
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Invoice Document Box */}
       <div className="bg-[#111111] border border-[#ffffff08] border-t-2 border-t-[#10B981] rounded-lg p-8 sm:p-10 shadow-2xl space-y-10">
         
@@ -240,7 +260,7 @@ export default function InvoiceDetail() {
             <div className="text-sm font-medium text-gray-400 tracking-wider">
               {invoice.invoiceNumber}
             </div>
-            <div className="pt-1.5">
+            <div className="pt-1.5 flex flex-wrap gap-2 sm:justify-end">
               {invoice.status === 'paid' ? (
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
                   Paid
@@ -252,6 +272,16 @@ export default function InvoiceDetail() {
               ) : (
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 uppercase tracking-wider">
                   Overdue
+                </span>
+              )}
+              {invoice.approvalStatus === 'rejected' && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-600/10 text-red-500 border border-red-600/20 uppercase tracking-wider">
+                  Rejected
+                </span>
+              )}
+              {invoice.approvalStatus === 'approved' && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-600/10 text-emerald-500 border border-emerald-600/20 uppercase tracking-wider">
+                  Approved
                 </span>
               )}
             </div>

@@ -2,6 +2,7 @@ const express = require('express');
 const Client = require('../models/Client');
 const Invoice = require('../models/Invoice');
 const { generatePdfBuffer } = require('../utils/pdfGenerator');
+const { sendRejectionEmail } = require('../utils/sendEmail');
 
 const router = express.Router();
 
@@ -47,7 +48,7 @@ router.patch('/:token/invoices/:id/approve', async (req, res) => {
       return res.status(404).json({ error: 'Invoice not found.' });
     }
 
-    invoice.approved = true;
+    invoice.approvalStatus = 'approved';
     await invoice.save();
 
     res.status(200).json({
@@ -57,6 +58,50 @@ router.patch('/:token/invoices/:id/approve', async (req, res) => {
   } catch (error) {
     console.error('Approve Invoice Error:', error.message);
     res.status(500).json({ error: 'Server error. Could not approve invoice.' });
+  }
+});
+
+// @route   PATCH /api/portal/:token/invoices/:id/reject
+// @desc    Reject an invoice from the client portal (Public)
+// Body: { reason: string }
+router.patch('/:token/invoices/:id/reject', async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Rejection reason is required.' });
+    }
+
+    const client = await Client.findOne({ portalToken: req.params.token });
+    if (!client) {
+      return res.status(404).json({ error: 'Invalid or expired client portal link.' });
+    }
+
+    const invoice = await Invoice.findOne({
+      _id: req.params.id,
+      clientId: client._id
+    }).populate('freelancerId');
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found.' });
+    }
+
+    invoice.approvalStatus = 'rejected';
+    invoice.rejectionReason = reason.trim();
+    invoice.rejectedAt = new Date();
+    await invoice.save();
+
+    // Send rejection email to freelancer
+    if (invoice.freelancerId && invoice.freelancerId.email) {
+      await sendRejectionEmail(invoice, client, invoice.freelancerId, reason.trim());
+    }
+
+    res.status(200).json({
+      message: 'Invoice rejected successfully.',
+      invoice
+    });
+  } catch (error) {
+    console.error('Reject Invoice Error:', error.message);
+    res.status(500).json({ error: 'Server error. Could not reject invoice.' });
   }
 });
 

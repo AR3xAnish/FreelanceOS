@@ -223,6 +223,7 @@ export default function App() {
                     <Route path="/invoices" element={<Invoices />} />
                     <Route path="/invoices/create" element={<CreateInvoice />} />
                     <Route path="/invoices/:id" element={<InvoiceDetail />} />
+                    <Route path="/invoices/:id/edit" element={<CreateInvoice />} />
                     <Route path="/expenses" element={<Expenses />} />
                     <Route path="/settings" element={<Settings />} />
                   </Route>

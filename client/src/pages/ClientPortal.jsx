@@ -24,6 +24,9 @@ export default function ClientPortal() {
   const [error, setError] = useState('')
   const [downloadingId, setDownloadingId] = useState(null)
   const [approvingId, setApprovingId] = useState(null)
+  const [rejectingInvoice, setRejectingInvoice] = useState(null)
+  const [rejectionReasonText, setRejectionReasonText] = useState('')
+  const [submittingRejection, setSubmittingRejection] = useState(false)
 
   const fetchPortalData = async () => {
     try {
@@ -111,13 +114,40 @@ export default function ClientPortal() {
       // Refresh local page state data
       setData(prev => ({
         ...prev,
-        invoices: prev.invoices.map(inv => inv._id === invoiceId ? { ...inv, approved: true } : inv)
+        invoices: prev.invoices.map(inv => inv._id === invoiceId ? { ...inv, approvalStatus: 'approved' } : inv)
       }))
     } catch (err) {
       console.error('Error approving invoice:', err)
       alert('Failed to approve invoice. Please try again.')
     } finally {
       setApprovingId(null)
+    }
+  }
+
+  // Handle Invoice Rejection
+  const handleRejectInvoice = async (e) => {
+    e.preventDefault()
+    if (!rejectionReasonText.trim()) {
+      alert('Please enter a rejection reason.')
+      return
+    }
+    setSubmittingRejection(true)
+    try {
+      await axios.patch(`${API_BASE}/${token}/invoices/${rejectingInvoice._id}/reject`, {
+        reason: rejectionReasonText.trim()
+      })
+      // Refresh local page state data
+      setData(prev => ({
+        ...prev,
+        invoices: prev.invoices.map(inv => inv._id === rejectingInvoice._id ? { ...inv, approvalStatus: 'rejected', rejectionReason: rejectionReasonText.trim() } : inv)
+      }))
+      setRejectingInvoice(null)
+      setRejectionReasonText('')
+    } catch (err) {
+      console.error('Error rejecting invoice:', err)
+      alert(err.response?.data?.error || 'Failed to reject invoice. Please try again.')
+    } finally {
+      setSubmittingRejection(false)
     }
   }
 
@@ -221,10 +251,21 @@ export default function ClientPortal() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        {inv.approved ? (
+                        {inv.approvalStatus === 'approved' ? (
                           <span className="inline-flex items-center gap-1 text-emerald-400 text-xs font-semibold">
                             <span>✓</span> Approved
                           </span>
+                        ) : inv.approvalStatus === 'rejected' ? (
+                          <div className="space-y-1">
+                            <span className="inline-flex items-center gap-1 text-red-400 text-xs font-semibold">
+                              <span>✗</span> Rejected
+                            </span>
+                            {inv.rejectionReason && (
+                              <div className="text-[11px] text-gray-500 max-w-[180px] sm:max-w-xs leading-tight break-words">
+                                Reason: <span className="text-gray-400 italic">"{inv.rejectionReason}"</span>
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-gray-500 text-xs">Pending Approval</span>
                         )}
@@ -233,14 +274,22 @@ export default function ClientPortal() {
                         {currencySymbol}{inv.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
                       <td className="px-6 py-4 text-right space-x-3">
-                        {inv.status !== 'paid' && !inv.approved && (
-                          <button
-                            onClick={() => handleApproveInvoice(inv._id)}
-                            disabled={approvingId === inv._id}
-                            className="bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] font-semibold text-xs px-3 py-1.5 rounded border border-[#10B981]/25 transition-colors duration-200 cursor-pointer disabled:opacity-50"
-                          >
-                            {approvingId === inv._id ? 'Approving...' : 'Approve Invoice'}
-                          </button>
+                        {inv.status !== 'paid' && inv.approvalStatus === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleApproveInvoice(inv._id)}
+                              disabled={approvingId === inv._id}
+                              className="bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] font-semibold text-xs px-3 py-1.5 rounded border border-[#10B981]/25 transition-colors duration-200 cursor-pointer disabled:opacity-50"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => setRejectingInvoice(inv)}
+                              className="bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold text-xs px-3 py-1.5 rounded border border-red-500/20 transition-colors duration-200 cursor-pointer"
+                            >
+                              Reject
+                            </button>
+                          </>
                         )}
                         <button
                           onClick={() => handleDownloadPDF(inv._id, inv.invoiceNumber)}
@@ -272,6 +321,57 @@ export default function ClientPortal() {
       <footer className="border-t border-[#ffffff08] bg-[#0A0A0A] py-8 text-center text-xs text-gray-500">
         <p>© 2026 FreelanceOS. Protected by secure link access authentication.</p>
       </footer>
+
+      {/* Rejection Modal */}
+      {rejectingInvoice && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-[#111111] border border-[#ffffff08] rounded-lg max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-white">Reject Invoice {rejectingInvoice.invoiceNumber}</h3>
+              <button 
+                onClick={() => setRejectingInvoice(null)}
+                className="text-gray-500 hover:text-white cursor-pointer text-lg leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <form onSubmit={handleRejectInvoice} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-400 block" htmlFor="rejectionReason">
+                  Reason for Rejection *
+                </label>
+                <textarea
+                  id="rejectionReason"
+                  rows="4"
+                  value={rejectionReasonText}
+                  onChange={(e) => setRejectionReasonText(e.target.value)}
+                  placeholder="Provide a reason why this invoice is being rejected..."
+                  className="w-full bg-[#0A0A0A] border border-[#ffffff08] focus:border-red-500 rounded-md px-3.5 py-2.5 text-sm text-white outline-none transition-colors duration-200 font-normal resize-none"
+                  required
+                />
+              </div>
+              
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRejectingInvoice(null)}
+                  className="px-4 py-2 border border-gray-800 hover:border-gray-600 rounded-md text-xs font-semibold text-gray-300 transition-colors duration-200 text-center cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRejection || !rejectionReasonText.trim()}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md text-xs transition-colors duration-200 disabled:opacity-50 cursor-pointer"
+                >
+                  {submittingRejection ? 'Rejecting...' : 'Reject Invoice'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -173,19 +173,31 @@ export default function Invoices() {
                       {getCurrencySymbol(inv.clientId?.currency || 'USD')}{inv.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4">
-                      {inv.status === 'paid' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          Paid
-                        </span>
-                      ) : inv.status === 'unpaid' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-                          Unpaid
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
-                          Overdue
-                        </span>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {inv.status === 'paid' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Paid
+                          </span>
+                        ) : inv.status === 'unpaid' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                            Unpaid
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
+                            Overdue
+                          </span>
+                        )}
+                        {inv.approvalStatus === 'rejected' && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20" title={inv.rejectionReason}>
+                            Rejected
+                          </span>
+                        )}
+                        {inv.approvalStatus === 'approved' && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Approved
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right space-x-3.5">
                       {inv.status !== 'paid' && (

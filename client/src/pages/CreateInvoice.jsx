@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 
 const CLIENTS_API = 'http://localhost:5000/api/clients'
@@ -19,6 +19,9 @@ const getCurrencySymbol = (currencyCode) => {
 };
 
 export default function CreateInvoice() {
+  const { id } = useParams()
+  const isEditMode = Boolean(id)
+
   const [clients, setClients] = useState([])
   const [loadingClients, setLoadingClients] = useState(true)
   const [error, setError] = useState('')
@@ -37,25 +40,47 @@ export default function CreateInvoice() {
   const selectedClient = clients.find(c => c._id === clientId)
   const clientCurrency = selectedClient?.currency || 'USD'
 
-  // Load clients to populate select dropdown
+  // Load clients & invoice details if edit mode
   useEffect(() => {
-    const fetchClients = async () => {
+    const initPage = async () => {
       try {
-        const res = await axios.get(CLIENTS_API)
-        const clientsList = res.data.clients || []
+        // 1. Fetch clients list
+        const clientsRes = await axios.get(CLIENTS_API)
+        const clientsList = clientsRes.data.clients || []
         setClients(clientsList)
-        if (clientsList.length > 0) {
+
+        // 2. Fetch invoice details if editing
+        if (isEditMode) {
+          const invoiceRes = await axios.get(`${INVOICES_API}/${id}`)
+          const inv = invoiceRes.data.invoice
+          if (inv) {
+            setClientId(inv.clientId?._id || inv.clientId)
+            setNotes(inv.notes || '')
+            setLineItems(inv.lineItems.map(item => ({
+              service: item.service,
+              quantity: item.quantity,
+              rate: item.rate
+            })))
+            
+            // Format UTC/ISO dueDate cleanly to YYYY-MM-DD input default representation
+            const d = new Date(inv.dueDate)
+            const year = d.getFullYear()
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            const day = String(d.getDate()).padStart(2, '0')
+            setDueDate(`${year}-${month}-${day}`)
+          }
+        } else if (clientsList.length > 0) {
           setClientId(clientsList[0]._id) // default select first client
         }
       } catch (err) {
-        console.error('Error fetching clients for dropdown:', err)
-        setError('Failed to fetch clients list. Please create a client first.')
+        console.error('Error initializing page data:', err)
+        setError(isEditMode ? 'Failed to fetch invoice details.' : 'Failed to fetch clients list. Please create a client first.')
       } finally {
         setLoadingClients(false)
       }
     }
-    fetchClients()
-  }, [])
+    initPage()
+  }, [id, isEditMode])
 
   // Line item handlers
   const handleItemChange = (index, field, value) => {
@@ -110,17 +135,27 @@ export default function CreateInvoice() {
     setSubmitting(true)
 
     try {
-      await axios.post(INVOICES_API, {
-        clientId,
-        lineItems,
-        dueDate,
-        notes,
-        status: 'unpaid'
-      })
-      navigate('/invoices')
+      if (isEditMode) {
+        await axios.put(`${INVOICES_API}/${id}`, {
+          clientId,
+          lineItems,
+          dueDate,
+          notes
+        })
+        navigate(`/invoices/${id}`)
+      } else {
+        await axios.post(INVOICES_API, {
+          clientId,
+          lineItems,
+          dueDate,
+          notes,
+          status: 'unpaid'
+        })
+        navigate('/invoices')
+      }
     } catch (err) {
-      console.error('Error creating invoice:', err)
-      setError(err.response?.data?.error || 'Failed to create invoice. Please try again.')
+      console.error('Error saving invoice:', err)
+      setError(err.response?.data?.error || `Failed to ${isEditMode ? 'save' : 'create'} invoice. Please try again.`)
       setSubmitting(false)
     }
   }
@@ -132,8 +167,12 @@ export default function CreateInvoice() {
         <Link to="/invoices" className="text-xs font-semibold text-[#10B981] hover:text-[#059669] transition-colors duration-200">
           &larr; Back to Invoices
         </Link>
-        <h1 className="text-3xl font-semibold tracking-tight text-white">Create Invoice</h1>
-        <p className="text-gray-500 text-sm font-normal">Build a detailed client invoice with custom services and rates.</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-white">
+          {isEditMode ? 'Edit Invoice' : 'Create Invoice'}
+        </h1>
+        <p className="text-gray-500 text-sm font-normal">
+          {isEditMode ? 'Modify this invoice details and save to resubmit for review.' : 'Build a detailed client invoice with custom services and rates.'}
+        </p>
       </div>
 
       {error && (
@@ -327,7 +366,7 @@ export default function CreateInvoice() {
               disabled={submitting}
               className="px-5 py-2.5 bg-[#10B981] hover:bg-[#059669] text-[#0A0A0A] font-semibold rounded-md text-xs transition-colors duration-200 disabled:opacity-50 cursor-pointer"
             >
-              {submitting ? 'Creating Invoice...' : 'Create Invoice'}
+              {submitting ? (isEditMode ? 'Saving Changes...' : 'Creating Invoice...') : (isEditMode ? 'Save & Resubmit' : 'Create Invoice')}
             </button>
           </div>
         </form>

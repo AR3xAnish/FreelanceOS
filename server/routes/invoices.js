@@ -184,6 +184,11 @@ router.put('/:id', async (req, res) => {
     invoice.dueDate = dueDate;
     invoice.notes = notes || '';
 
+    // Automatically reset approvalStatus back to 'pending' for re-review
+    invoice.approvalStatus = 'pending';
+    invoice.rejectionReason = '';
+    invoice.rejectedAt = undefined;
+
     await invoice.save(); // save() triggers pre-save calculation hooks!
     res.status(200).json({ invoice });
   } catch (error) {
