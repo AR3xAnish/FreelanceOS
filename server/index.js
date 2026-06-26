@@ -9,7 +9,17 @@ const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/freelanceos';
 
 // Middleware
-app.use(cors());
+
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://freelance-os-git-main-anishsnilajkar-gmailcoms-projects.vercel.app',
+    /\.vercel\.app$/  // allows ALL vercel.app subdomains
+  ],
+  credentials: true
+}));
+
+
 app.use(express.json());
 
 // Routes
