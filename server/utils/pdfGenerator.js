@@ -1,9 +1,9 @@
-const puppeteer = require('puppeteer');
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 
 async function generatePdfBuffer(invoice) {
   const freelancer = invoice.freelancerId || {};
   const client = invoice.clientId || {};
-  
+
   const formatDate = (dateVal) => {
     if (!dateVal) return '';
     const date = new Date(dateVal);
@@ -17,6 +17,14 @@ async function generatePdfBuffer(invoice) {
   const dateFormatted = formatDate(invoice.createdAt);
   const dueDateFormatted = formatDate(invoice.dueDate);
 
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595.276, 841.890]); // A4 size in postscript points
+  const { width, height } = page.getSize();
+
+  // Load fonts
+  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
   // Determine currency symbol
   const clientCurrency = client.currency || freelancer.currency || 'USD';
   const currencySymbols = {
@@ -28,278 +36,252 @@ async function generatePdfBuffer(invoice) {
     AUD: 'A$',
     JPY: '¥'
   };
-  const currencySymbol = currencySymbols[clientCurrency] || clientCurrency + ' ';
+  let currencySymbol = currencySymbols[clientCurrency] || clientCurrency + ' ';
 
-  const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Invoice ${invoice.invoiceNumber || 'Draft'}</title>
-  <style>
-    body {
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      color: #1f2937;
-      margin: 0;
-      padding: 40px;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    .invoice-card {
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      border-bottom: 2px solid #f3f4f6;
-      padding-bottom: 24px;
-      margin-bottom: 30px;
-    }
-    .logo-container {
-      font-size: 24px;
-      font-weight: 700;
-      color: #10B981;
-    }
-    .logo-container span {
-      color: #111827;
-    }
-    .invoice-title {
-      text-align: right;
-    }
-    .invoice-title h1 {
-      margin: 0 0 4px 0;
-      font-size: 24px;
-      color: #111827;
-      font-weight: 700;
-    }
-    .invoice-title .meta {
-      font-size: 12px;
-      color: #6b7280;
-      line-height: 1.6;
-    }
-    .details {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 40px;
-      gap: 20px;
-    }
-    .details .col {
-      width: 48%;
-    }
-    .details h3 {
-      margin: 0 0 12px 0;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #9ca3af;
-      border-bottom: 1px solid #e5e7eb;
-      padding-bottom: 6px;
-      font-weight: 600;
-    }
-    .details p {
-      margin: 0 0 6px 0;
-      font-size: 13px;
-      color: #374151;
-    }
-    .details .name {
-      font-weight: 600;
-      color: #111827;
-      font-size: 14px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      margin-bottom: 30px;
-    }
-    th {
-      border-bottom: 2px solid #e5e7eb;
-      padding: 12px 8px;
-      font-weight: 600;
-      color: #374151;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    td {
-      padding: 14px 8px;
-      border-bottom: 1px solid #f3f4f6;
-      color: #4b5563;
-      font-size: 13px;
-    }
-    .text-right {
-      text-align: right;
-    }
-    .totals {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 40px;
-    }
-    .totals-table {
-      width: 40%;
-      border-collapse: collapse;
-    }
-    .totals-table td {
-      padding: 8px 8px;
-      border: none;
-      font-size: 13px;
-      color: #4b5563;
-    }
-    .totals-table tr.grand-total td {
-      border-top: 1px solid #e5e7eb;
-      padding-top: 12px;
-      font-size: 16px;
-      font-weight: 700;
-      color: #111827;
-    }
-    .status-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .status-paid {
-      background-color: #ecfdf5;
-      color: #047857;
-    }
-    .status-unpaid {
-      background-color: #fffbeb;
-      color: #b45309;
-    }
-    .status-overdue {
-      background-color: #fef2f2;
-      color: #b91c1c;
-    }
-    .notes {
-      margin-top: 40px;
-      border-top: 1px solid #e5e7eb;
-      padding-top: 20px;
-    }
-    .notes h4 {
-      margin: 0 0 8px 0;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #9ca3af;
-      font-weight: 600;
-    }
-    .notes p {
-      margin: 0;
-      font-size: 12px;
-      color: #4b5563;
-      white-space: pre-wrap;
-    }
-  </style>
-</head>
-<body>
-  <div class="invoice-card">
-    <div class="header">
-      <div class="logo-container">
-        Freelance<span>OS</span>
-      </div>
-      <div class="invoice-title">
-        <h1>INVOICE</h1>
-        <div class="meta">
-          <strong>Invoice #:</strong> ${invoice.invoiceNumber || 'N/A'}<br>
-          <strong>Date:</strong> ${dateFormatted}<br>
-          <strong>Due Date:</strong> ${dueDateFormatted}
-        </div>
-      </div>
-    </div>
+  // Test if standard font can encode the symbol. If not, fallback to currency code
+  try {
+    helvetica.widthOfTextAtSize(currencySymbol, 10);
+  } catch (e) {
+    currencySymbol = clientCurrency + ' ';
+  }
 
-    <div class="details">
-      <div class="col">
-        <h3>From</h3>
-        <p class="name">${freelancer.businessName || freelancer.name || 'Freelancer'}</p>
-        ${freelancer.address ? `<p>${freelancer.address}</p>` : ''}
-        <p>Email: ${freelancer.email || ''}</p>
-        ${freelancer.gstNumber ? `<p>GSTIN: ${freelancer.gstNumber}</p>` : ''}
-      </div>
-      <div class="col">
-        <h3>To</h3>
-        <p class="name">${client.name || 'Client'}</p>
-        ${client.companyName ? `<p>${client.companyName}</p>` : ''}
-        ${client.phone ? `<p>Phone: ${client.phone}</p>` : ''}
-        <p>Email: ${client.email || ''}</p>
-      </div>
-    </div>
+  // Colors
+  const darkGray = rgb(0.12, 0.16, 0.23); // #1f2937
+  const blackText = rgb(0.07, 0.09, 0.15); // #111827
+  const grayText = rgb(0.42, 0.45, 0.5); // #6b7280
+  const lightGrayText = rgb(0.61, 0.64, 0.69); // #9ca3af
+  const emeraldGreen = rgb(0.06, 0.73, 0.51); // #10B981
+  const borderLineColor = rgb(0.9, 0.9, 0.9);
+  const lightBgColor = rgb(0.95, 0.96, 0.98);
 
-    <table>
-      <thead>
-        <tr>
-          <th>Service Description</th>
-          <th class="text-right" style="width: 100px;">Rate</th>
-          <th class="text-right" style="width: 80px;">Qty</th>
-          <th class="text-right" style="width: 120px;">Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${invoice.lineItems.map(item => `
-          <tr>
-            <td>${item.service}</td>
-            <td class="text-right">${currencySymbol}${Number(item.rate).toFixed(2)}</td>
-            <td class="text-right">${item.quantity}</td>
-            <td class="text-right">${currencySymbol}${Number(item.amount).toFixed(2)}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
+  // Draw text helpers
+  const drawText = (text, x, y, options = {}) => {
+    const { font = helvetica, size = 10, color = darkGray } = options;
+    page.drawText(String(text), { x, y, font, size, color });
+  };
 
-    <div class="totals">
-      <table class="totals-table">
-        <tr>
-          <td>Status</td>
-          <td class="text-right">
-            <span class="status-badge status-${invoice.status}">
-              ${invoice.status}
-            </span>
-          </td>
-        </tr>
-        <tr class="grand-total">
-          <td>Total Due</td>
-          <td class="text-right">${currencySymbol}${Number(invoice.totalAmount).toFixed(2)}</td>
-        </tr>
-      </table>
-    </div>
+  const drawTextRight = (text, rightX, y, options = {}) => {
+    const { font = helvetica, size = 10, color = darkGray } = options;
+    const textWidth = font.widthOfTextAtSize(String(text), size);
+    page.drawText(String(text), { x: rightX - textWidth, y, font, size, color });
+  };
 
-    ${invoice.notes ? `
-      <div class="notes">
-        <h4>Notes / Payment Terms</h4>
-        <p>${invoice.notes}</p>
-      </div>
-    ` : ''}
-  </div>
-</body>
-</html>
-  `;
+  // Header Logo Title
+  drawText('Freelance', 40, 780, { font: helveticaBold, size: 22, color: emeraldGreen });
+  const fWidth = helveticaBold.widthOfTextAtSize('Freelance', 22);
+  drawText('OS', 40 + fWidth, 780, { font: helveticaBold, size: 22, color: blackText });
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  // INVOICE title
+  drawTextRight('INVOICE', 555, 780, { font: helveticaBold, size: 22, color: blackText });
+
+  // Invoice meta
+  let metaY = 760;
+  drawTextRight(`Invoice #: ${invoice.invoiceNumber || 'N/A'}`, 555, metaY, { font: helveticaBold, size: 10, color: darkGray });
+  metaY -= 14;
+  drawTextRight(`Date: ${dateFormatted}`, 555, metaY, { size: 9, color: grayText });
+  metaY -= 14;
+  drawTextRight(`Due Date: ${dueDateFormatted}`, 555, metaY, { size: 9, color: grayText });
+
+  // Horizontal Header Divider
+  page.drawLine({
+    start: { x: 40, y: 715 },
+    end: { x: 555, y: 715 },
+    thickness: 1,
+    color: borderLineColor
   });
 
-  const page = await browser.newPage();
-  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+  // Sender Details (From)
+  drawText('FROM', 40, 690, { font: helveticaBold, size: 9, color: lightGrayText });
+  drawText(freelancer.businessName || freelancer.name || 'Freelancer', 40, 675, { font: helveticaBold, size: 12, color: blackText });
   
-  const pdfBuffer = await page.pdf({
-    format: 'A4',
-    printBackground: true,
-    margin: {
-      top: '20px',
-      bottom: '20px',
-      left: '20px',
-      right: '20px'
-    }
+  let fromY = 660;
+  if (freelancer.address) {
+    const lines = freelancer.address.split('\n');
+    lines.forEach(line => {
+      drawText(line, 40, fromY, { size: 9, color: grayText });
+      fromY -= 13;
+    });
+  }
+  drawText(`Email: ${freelancer.email || ''}`, 40, fromY, { size: 9, color: grayText });
+  fromY -= 13;
+  if (freelancer.gstNumber) {
+    drawText(`GSTIN: ${freelancer.gstNumber}`, 40, fromY, { size: 9, color: grayText });
+    fromY -= 13;
+  }
+
+  // Recipient Details (To)
+  drawText('TO', 320, 690, { font: helveticaBold, size: 9, color: lightGrayText });
+  drawText(client.name || 'Client', 320, 675, { font: helveticaBold, size: 12, color: blackText });
+  
+  let toY = 660;
+  if (client.companyName) {
+    drawText(client.companyName, 320, toY, { font: helveticaBold, size: 9, color: emeraldGreen });
+    toY -= 13;
+  }
+  if (client.phone) {
+    drawText(`Phone: ${client.phone}`, 320, toY, { size: 9, color: grayText });
+    toY -= 13;
+  }
+  drawText(`Email: ${client.email || ''}`, 320, toY, { size: 9, color: grayText });
+  toY -= 13;
+
+  // Let table start dynamically below the lowest y coordinate of From / To blocks
+  const tableStartY = Math.min(fromY, toY) - 30;
+
+  // Draw Table Headers
+  drawText('Service Description', 40, tableStartY, { font: helveticaBold, size: 9, color: grayText });
+  drawTextRight('Rate', 380, tableStartY, { font: helveticaBold, size: 9, color: grayText });
+  drawTextRight('Qty', 450, tableStartY, { font: helveticaBold, size: 9, color: grayText });
+  drawTextRight('Amount', 555, tableStartY, { font: helveticaBold, size: 9, color: grayText });
+
+  // Border line under headers
+  page.drawLine({
+    start: { x: 40, y: tableStartY - 8 },
+    end: { x: 555, y: tableStartY - 8 },
+    thickness: 1.5,
+    color: rgb(0.85, 0.85, 0.85)
   });
 
-  await browser.close();
-  return pdfBuffer;
+  // Table rows
+  let itemY = tableStartY - 24;
+  (invoice.lineItems || []).forEach(item => {
+    const descText = item.service || '';
+    const rateText = `${currencySymbol}${Number(item.rate).toFixed(2)}`;
+    const qtyText = String(item.quantity);
+    const amountText = `${currencySymbol}${Number(item.amount).toFixed(2)}`;
+
+    // Wrap description if it exceeds 260 points width
+    const maxDescWidth = 260;
+    const words = descText.split(' ');
+    let currentLine = '';
+    let descLines = [];
+    
+    words.forEach(word => {
+      const testLine = currentLine + (currentLine ? ' ' : '') + word;
+      const testWidth = helvetica.widthOfTextAtSize(testLine, 9);
+      if (testWidth > maxDescWidth) {
+        descLines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    });
+    if (currentLine) {
+      descLines.push(currentLine);
+    }
+    if (descLines.length === 0) descLines.push('');
+
+    // Draw description lines
+    let textDrawY = itemY;
+    descLines.forEach(line => {
+      drawText(line, 40, textDrawY, { size: 9, color: darkGray });
+      textDrawY -= 13;
+    });
+
+    // Draw numeric columns (on the first line y position)
+    drawTextRight(rateText, 380, itemY, { size: 9, color: darkGray });
+    drawTextRight(qtyText, 450, itemY, { size: 9, color: darkGray });
+    drawTextRight(amountText, 555, itemY, { font: helveticaBold, size: 9, color: blackText });
+
+    // Move to next item Y position
+    const rowHeight = descLines.length * 13;
+    itemY -= (rowHeight + 10);
+
+    // Separator line between rows
+    page.drawLine({
+      start: { x: 40, y: itemY + 8 },
+      end: { x: 555, y: itemY + 8 },
+      thickness: 0.5,
+      color: rgb(0.93, 0.93, 0.93)
+    });
+  });
+
+  // Subtotal and Grand Total block
+  let totalsY = itemY - 10;
+
+  // Background box for status and total
+  page.drawRectangle({
+    x: 320,
+    y: totalsY - 45,
+    width: 235,
+    height: 50,
+    color: lightBgColor
+  });
+
+  // Invoice Status badge/text inside totals box
+  drawText('Status:', 335, totalsY - 14, { size: 9, color: grayText });
+  const statusStr = (invoice.status || 'unpaid').toUpperCase();
+  const statusWidth = helveticaBold.widthOfTextAtSize(statusStr, 8);
+  
+  let badgeBgColor = rgb(0.9, 0.9, 0.9);
+  let badgeTextColor = rgb(0.3, 0.3, 0.3);
+  if (invoice.status === 'paid') {
+    badgeBgColor = rgb(0.92, 0.99, 0.96); // #ecfdf5
+    badgeTextColor = rgb(0.02, 0.47, 0.34); // #047857
+  } else if (invoice.status === 'unpaid') {
+    badgeBgColor = rgb(1.0, 0.98, 0.92); // #fffbeb
+    badgeTextColor = rgb(0.7, 0.33, 0.04); // #b45309
+  } else if (invoice.status === 'overdue') {
+    badgeBgColor = rgb(1.0, 0.95, 0.95); // #fef2f2
+    badgeTextColor = rgb(0.73, 0.11, 0.11); // #b91c1c
+  }
+
+  // Draw status badge rectangle
+  page.drawRectangle({
+    x: 540 - statusWidth - 12,
+    y: totalsY - 17,
+    width: statusWidth + 12,
+    height: 14,
+    color: badgeBgColor
+  });
+  // Draw status badge text
+  page.drawText(statusStr, {
+    x: 540 - statusWidth - 6,
+    y: totalsY - 13,
+    font: helveticaBold,
+    size: 8,
+    color: badgeTextColor
+  });
+
+  // Grand Total line
+  drawText('Total Due:', 335, totalsY - 36, { font: helveticaBold, size: 10, color: blackText });
+  drawTextRight(`${currencySymbol}${Number(invoice.totalAmount).toFixed(2)}`, 540, totalsY - 36, { font: helveticaBold, size: 12, color: emeraldGreen });
+
+  // Notes & payment terms
+  if (invoice.notes) {
+    const notesY = totalsY - 80;
+    drawText('Notes / Payment Terms', 40, notesY, { font: helveticaBold, size: 9, color: lightGrayText });
+    
+    // Draw notes lines
+    let currentNotesY = notesY - 15;
+    const noteLines = invoice.notes.split('\n');
+    noteLines.forEach(line => {
+      // Basic word-wrapping for notes
+      const maxNoteWidth = 515;
+      const noteWords = line.split(' ');
+      let currentNoteLine = '';
+      
+      noteWords.forEach(word => {
+        const testLine = currentNoteLine + (currentNoteLine ? ' ' : '') + word;
+        const testWidth = helvetica.widthOfTextAtSize(testLine, 9);
+        if (testWidth > maxNoteWidth) {
+          drawText(currentNoteLine, 40, currentNotesY, { size: 9, color: grayText });
+          currentNotesY -= 13;
+          currentNoteLine = word;
+        } else {
+          currentNoteLine = testLine;
+        }
+      });
+      if (currentNoteLine) {
+        drawText(currentNoteLine, 40, currentNotesY, { size: 9, color: grayText });
+        currentNotesY -= 13;
+      }
+    });
+  }
+
+  // Serialize the PDFDocument to bytes (a Uint8Array)
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
 }
 
 module.exports = { generatePdfBuffer };
