@@ -46,6 +46,10 @@ const invoiceSchema = new mongoose.Schema({
     enum: ['unpaid', 'paid', 'overdue'],
     default: 'unpaid',
   },
+  approved: {
+    type: Boolean,
+    default: false,
+  },
   dueDate: {
     type: Date,
     required: true,

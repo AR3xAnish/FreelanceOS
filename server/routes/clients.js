@@ -1,6 +1,8 @@
 const express = require('express');
+const crypto = require('crypto');
 const Client = require('../models/Client');
 const authMiddleware = require('../middleware/authMiddleware');
+const { sendPortalEmail } = require('../utils/sendEmail');
 
 const router = express.Router();
 
@@ -126,6 +128,40 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Client not found.' });
     }
     res.status(500).json({ error: 'Server error. Could not delete client.' });
+  }
+});
+
+// @route   POST /api/clients/:id/send-portal
+// @desc    Generate portal token and send portal link via email
+// @access  Private (Freelancer only)
+router.post('/:id/send-portal', async (req, res) => {
+  try {
+    const client = await Client.findOne({
+      _id: req.params.id,
+      freelancerId: req.user._id
+    });
+
+    if (!client) {
+      return res.status(404).json({ error: 'Client not found or unauthorized.' });
+    }
+
+    // Generate token if not already exists
+    if (!client.portalToken) {
+      client.portalToken = crypto.randomBytes(32).toString('hex');
+      await client.save();
+    }
+
+    const portalLink = `http://localhost:5173/portal/${client.portalToken}`;
+    await sendPortalEmail(client, req.user, portalLink);
+
+    res.status(200).json({
+      message: 'Client portal link generated and emailed successfully.',
+      portalToken: client.portalToken,
+      portalLink
+    });
+  } catch (error) {
+    console.error('Send Portal Error:', error.message);
+    res.status(500).json({ error: 'Server error. Could not email portal link.' });
   }
 });
 

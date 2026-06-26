@@ -21,6 +21,14 @@ export default function Clients() {
   const [modalError, setModalError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  // Client Portal modal states
+  const [portalModalOpen, setPortalModalOpen] = useState(false)
+  const [portalClient, setPortalClient] = useState(null)
+  const [generatingPortal, setGeneratingPortal] = useState(false)
+  const [portalError, setPortalError] = useState('')
+  const [portalLink, setPortalLink] = useState('')
+  const [portalCopied, setPortalCopied] = useState(false)
+
   // Fetch all clients
   const fetchClients = async () => {
     setLoading(true)
@@ -102,6 +110,39 @@ export default function Clients() {
     }
   }
 
+  // Handle Client Portal Generation & Link Copy
+  const handleSendPortal = async (client) => {
+    setPortalClient(client)
+    setPortalError('')
+    setPortalLink('')
+    setPortalCopied(false)
+    setGeneratingPortal(true)
+    setPortalModalOpen(true)
+
+    try {
+      const res = await axios.post(`${API_URL}/${client._id}/send-portal`)
+      setPortalLink(res.data.portalLink)
+      setClients(prev => prev.map(c => c._id === client._id ? { ...c, portalToken: res.data.portalToken } : c))
+    } catch (err) {
+      console.error('Error generating portal link:', err)
+      setPortalError(err.response?.data?.error || 'Failed to generate portal link.')
+    } finally {
+      setGeneratingPortal(false)
+    }
+  }
+
+  const handleCopyLink = () => {
+    if (!portalLink) return
+    navigator.clipboard.writeText(portalLink)
+    setPortalCopied(true)
+    setTimeout(() => setPortalCopied(false), 2000)
+  }
+
+  const handleClosePortalModal = () => {
+    setPortalModalOpen(false)
+    setPortalClient(null)
+  }
+
   // Handle Delete
   const handleDelete = async (clientId) => {
     if (!window.confirm('Are you sure you want to delete this client?')) return
@@ -178,6 +219,12 @@ export default function Clients() {
                     <td className="px-6 py-4">{client.companyName || <span className="text-gray-600">—</span>}</td>
                     <td className="px-6 py-4 font-medium text-gray-400">{client.currency}</td>
                     <td className="px-6 py-4 text-right space-x-3.5">
+                      <button
+                        onClick={() => handleSendPortal(client)}
+                        className="text-emerald-400 hover:text-emerald-500 font-semibold transition-colors duration-200 cursor-pointer"
+                      >
+                        Portal
+                      </button>
                       <button
                         onClick={() => handleOpenEdit(client)}
                         className="text-[#10B981] hover:text-[#059669] font-semibold transition-colors duration-200 cursor-pointer"
@@ -316,6 +363,74 @@ export default function Clients() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Client Portal Link Modal */}
+      {portalModalOpen && (
+        <div className="fixed inset-0 bg-[#0A0A0A]/85 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-[#111111] border border-[#ffffff08] border-t-2 border-t-[#10B981] rounded-lg w-full max-w-md p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#ffffff08] pb-3">
+              <h3 className="text-lg font-semibold text-white">Client Portal Access</h3>
+              <button
+                onClick={handleClosePortalModal}
+                className="text-gray-500 hover:text-white transition-colors duration-200 cursor-pointer text-xl line-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            {generatingPortal ? (
+              <div className="py-8 flex flex-col items-center justify-center text-gray-500 space-y-3">
+                <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-xs">Generating link and sending email...</span>
+              </div>
+            ) : portalError ? (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-md text-xs text-red-400 font-medium">
+                {portalError}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-center space-y-2">
+                  <div className="text-3xl">📧</div>
+                  <h4 className="text-sm font-semibold text-white">Portal link successfully sent!</h4>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    An email with a secure link was sent to <strong className="text-gray-200">{portalClient?.email}</strong>. 
+                    They can view and approve invoices without needing a password.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 pt-3 border-t border-[#ffffff08]">
+                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">
+                    Copy Portal Link Manually
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={portalLink}
+                      className="grow bg-[#0A0A0A] border border-[#ffffff08] rounded-md px-3 py-1.5 text-xs text-gray-300 outline-none select-all"
+                    />
+                    <button
+                      onClick={handleCopyLink}
+                      className="px-3.5 py-1.5 bg-[#10B981] hover:bg-[#059669] text-[#0A0A0A] text-xs font-semibold rounded-md transition-colors duration-200 cursor-pointer whitespace-nowrap min-w-[70px]"
+                    >
+                      {portalCopied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-3 border-t border-[#ffffff08]">
+              <button
+                onClick={handleClosePortalModal}
+                className="px-4 py-2 border border-gray-800 hover:border-gray-600 rounded-md text-xs font-semibold text-gray-300 transition-colors duration-200 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

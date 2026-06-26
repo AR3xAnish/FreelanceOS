@@ -84,8 +84,29 @@ async function sendOverdueEmail(invoice, client) {
   return transporter.sendMail(mailOptions);
 }
 
+/**
+ * Sends a portal link email to the client.
+ */
+async function sendPortalEmail(client, freelancer, portalLink) {
+  if (!transporter) {
+    console.log(`[MOCK EMAIL] sendPortalEmail: To: ${client.email}, Link: ${portalLink}`);
+    return { mockSent: true };
+  }
+
+  const businessName = freelancer.businessName || freelancer.name || 'Freelancer';
+  const mailOptions = {
+    from: `"${businessName}" <${process.env.EMAIL_USER}>`,
+    to: client.email,
+    subject: `Access your Client Portal - ${businessName}`,
+    text: `Hello ${client.name},\n\n${businessName} has invited you to access your client portal. Here you can view all invoices sent to you, download PDF copies, and approve them.\n\nPlease click the link below to access your portal:\n${portalLink}\n\nBest regards,\n${freelancer.name}`
+  };
+
+  return transporter.sendMail(mailOptions);
+}
+
 module.exports = {
   sendInvoiceEmail,
   sendReminderEmail,
-  sendOverdueEmail
+  sendOverdueEmail,
+  sendPortalEmail
 };

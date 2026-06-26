@@ -12,6 +12,7 @@ import InvoiceDetail from './pages/InvoiceDetail'
 import Expenses from './pages/Expenses'
 import Settings from './pages/Settings'
 import Dashboard from './pages/Dashboard'
+import ClientPortal from './pages/ClientPortal'
 
 // API base URL configuration
 const API_URL = 'http://localhost:5000/api'
@@ -205,25 +206,36 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Layout>
-          <Routes>
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/invoices/create" element={<CreateInvoice />} />
-              <Route path="/invoices/:id" element={<InvoiceDetail />} />
-              <Route path="/expenses" element={<Expenses />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
+        <Routes>
+          {/* Client Portal Route (Rendered without the freelancer navigation Layout) */}
+          <Route path="/portal/:token" element={<ClientPortal />} />
 
-            {/* Public Routes */}
-            <Route path="/about" element={<About />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-          </Routes>
-        </Layout>
+          {/* Freelancer Dashboard / Admin pages (Rendered inside the Layout) */}
+          <Route
+            path="*"
+            element={
+              <Layout>
+                <Routes>
+                  {/* Protected Routes */}
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/clients" element={<Clients />} />
+                    <Route path="/invoices" element={<Invoices />} />
+                    <Route path="/invoices/create" element={<CreateInvoice />} />
+                    <Route path="/invoices/:id" element={<InvoiceDetail />} />
+                    <Route path="/expenses" element={<Expenses />} />
+                    <Route path="/settings" element={<Settings />} />
+                  </Route>
+
+                  {/* Public Freelancer Routes */}
+                  <Route path="/about" element={<About />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                </Routes>
+              </Layout>
+            }
+          />
+        </Routes>
       </AuthProvider>
     </BrowserRouter>
   )

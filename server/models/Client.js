@@ -31,6 +31,11 @@ const clientSchema = new mongoose.Schema({
     type: String,
     default: 'USD',
   },
+  portalToken: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
 }, {
   timestamps: true,
 });
