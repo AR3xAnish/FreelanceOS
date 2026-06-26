@@ -13,7 +13,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/freela
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://freelance-os-git-main-anishsnilajkar-gmailcoms-projects.vercel.app',
+    'https://freelance-os-server.vercel.app',
     /\.vercel\.app$/  // allows ALL vercel.app subdomains
   ],
   credentials: true
