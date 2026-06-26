@@ -37,10 +37,14 @@ mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
   .then(() => {
     console.log('Connected to MongoDB database successfully');
     initCronJobs();
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
+    // Keep this for local development
+    if (process.env.NODE_ENV !== 'production') {
+      app.listen(5000, () => {
+        console.log('Server running on port 5000');
+      });
+    }
   })
+
   .catch((error) => {
     console.error('MongoDB database connection error:', error.message);
     console.log('Starting server anyway for healthcheck fallback...');
@@ -48,3 +52,6 @@ mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
       console.log(`Server is running on port ${PORT} (without DB connection)`);
     });
   });
+
+// Export for Vercel
+module.exports = app;
