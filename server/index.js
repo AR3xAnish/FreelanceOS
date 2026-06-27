@@ -2,23 +2,18 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
-const { initCronJobs } = require('./utils/cronJobs');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/freelanceos';
 
 // Middleware
-
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://freelance-os-server.vercel.app',
-    /\.vercel\.app$/  // allows ALL vercel.app subdomains
+    'https://freelance-os.vercel.app',
+    /\.vercel\.app$/
   ],
   credentials: true
 }));
-
 
 app.use(express.json());
 
@@ -37,31 +32,46 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/portal', portalRoutes);
 
-// Basic health check route
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Database connection & Server start
-mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
-  .then(() => {
-    console.log('Connected to MongoDB database successfully');
-    initCronJobs();
-    // Keep this for local development
-    if (process.env.NODE_ENV !== 'production') {
-      app.listen(5000, () => {
-        console.log('Server running on port 5000');
-      });
-    }
-  })
+// Persistent connection pattern for serverless
+let isConnected = false;
 
-  .catch((error) => {
-    console.error('MongoDB database connection error:', error.message);
-    console.log('Starting server anyway for healthcheck fallback...');
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT} (without DB connection)`);
-    });
+const connectDB = async () => {
+  if (isConnected) return;
+
+  await mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    bufferCommands: false,
   });
+
+  isConnected = true;
+  console.log('MongoDB connected');
+};
+
+// Connect before every request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error('DB connection error:', error.message);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
+
+// Local development
+if (process.env.NODE_ENV !== 'production') {
+  const { initCronJobs } = require('./utils/cronJobs');
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+      initCronJobs();
+      app.listen(5000, () => console.log('Server running on port 5000'));
+    });
+}
 
 // Export for Vercel
 module.exports = app;
