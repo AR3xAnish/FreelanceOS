@@ -8,7 +8,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://freelance-os.vercel.app',
+    process.env.CLIENT_URL,
     /\.vercel\.app$/
   ],
   credentials: true
