@@ -151,7 +151,8 @@ router.post('/:id/send-portal', async (req, res) => {
       await client.save();
     }
 
-    const portalLink = `http://localhost:5173/portal/${client.portalToken}`;
+    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const portalLink = `${clientUrl}/portal/${client.portalToken}`;
     await sendPortalEmail(client, req.user, portalLink);
 
     res.status(200).json({
