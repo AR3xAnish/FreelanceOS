@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
+import { useAuth } from '../context/AuthContext'
 
 const CLIENTS_API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/clients'
 const INVOICES_API = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/invoices'
@@ -21,6 +22,7 @@ const getCurrencySymbol = (currencyCode) => {
 export default function CreateInvoice() {
   const { id } = useParams()
   const isEditMode = Boolean(id)
+  const { user } = useAuth()
 
   const [clients, setClients] = useState([])
   const [loadingClients, setLoadingClients] = useState(true)
@@ -38,7 +40,7 @@ export default function CreateInvoice() {
   const navigate = useNavigate()
 
   const selectedClient = clients.find(c => c._id === clientId)
-  const clientCurrency = selectedClient?.currency || 'USD'
+  const clientCurrency = selectedClient?.currency || user?.currency || 'USD'
 
   // Load clients & invoice details if edit mode
   useEffect(() => {

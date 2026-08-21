@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
       email,
       phone: phone || '',
       companyName: companyName || '',
-      currency: currency || 'USD',
+      currency: currency || req.user.currency || 'USD',
     });
 
     await client.save();

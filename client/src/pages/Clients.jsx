@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { useAuth } from '../context/AuthContext'
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/clients'
 
 export default function Clients() {
+  const { user } = useAuth()
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -17,7 +19,7 @@ export default function Clients() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [companyName, setCompanyName] = useState('')
-  const [currency, setCurrency] = useState('USD')
+  const [currency, setCurrency] = useState(user?.currency || 'USD')
   const [modalError, setModalError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -55,7 +57,7 @@ export default function Clients() {
     setEmail('')
     setPhone('')
     setCompanyName('')
-    setCurrency('USD')
+    setCurrency(user?.currency || 'USD')
     setModalError('')
     setModalOpen(true)
   }
